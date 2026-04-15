@@ -17,8 +17,7 @@ Folgende Verschaltung wird genutzt:
 - Poti: Abgreifspannung auf `GPIO1`
 Da `GPIO` Pins eine Spannung von 3.3V brauchen, wird vom ECHO Ausgang des USS ein Spannungsteiler aufgebaut. Aus $frac(U_2, U_1) = frac(R_2, R_1)$ und $U_1 + U_2 = 5V$ ergibt sich $frac(R_2, R_1) approx 2$. Da wir drei $1"kOhm"$ Widerstände finden, bauen wir mit $R_2 = 2K$ mit zwei $1K$ in Reihe und $R_1 = 1K$ einen Spannungsteiler auf.
 == Software
-Zuerst enablen wir die GPIO out Pins mit `*GPIO_ENABLE_REG = 0b00001010;` für den Poti und das USS Init Signal.
-werden. Wir nutzen `*GPIO_OUT_REG |= (1 << 3);` um den Port auf `HIGH` zu setzen und das INIT-Signal für den USS zu senden. Wir warten dann mit einer For-Schleife die benötigte Zeit. Danach setzen wir mit `*GPIO_OUT_REG &= ~(1 << 3);` auf 0.
+Zuerst enablen wir die GPIO out Pins mit `*GPIO_ENABLE_REG = 0b00001010;` für den Poti und das USS Init Signal. Wir nutzen `*GPIO_OUT_REG |= (1 << 3);` um den Port auf `HIGH` zu setzen und das INIT-Signal für den USS zu senden. Wir warten dann mit einer For-Schleife die benötigte Zeit. Danach setzen wir mit `*GPIO_OUT_REG &= ~(1 << 3);` auf 0.
 
 Wir nutzen `int isEchoing = (*GPIO_IN_REG & (1 << 2));` um den Status des Outsignals des USS zu prüfen.
 Um den Timer aufzusetzen, setzen wir zuerst den Divider auf 2 mit `TIMG_T0CONFIG_REG |= (1 << 13);` und den RST mit `TIMG_T0CONFIG_REG |= (1 << 12);`. Zu jeder Mainloop-Iteration resetten wir den Timer, sodass er mit 0 startet: `*TIMG_T0LOADLO_REG = 0;` und `*TIMG_T0LOAD_REG = 1;`, damit der Timer den Loadwert übernimmt. Wir starten bei Start des Echos den Timer `*TIMG_T0CONFIG_REG |= (1 << 31);`. Nachdem das Echo zuende ist, schalten wir den Timer aus `*TIMG_T0CONFIG_REG &= ~(1 << 31);` und latchen dann ans Hi und Lo Register: `TIMG_T0UPDATE_REG |= (1 << 31);`. Dann lesen wir `value = *TIMG_T0LO_REG`.
